@@ -1,18 +1,17 @@
-# mcbash
+# mcbash (Fork amélioré)
 
-`mcbash` is a fast, modular and user-friendly script to find valid MAC addresses on some IPTV platforms.
+Ce projet est un fork amélioré de `mcbash`, un script rapide, modulaire et convivial pour trouver des adresses MAC valides sur certaines plateformes IPTV.
 
-Just feed it with a server URL or IP, and let it check by itself.
+En plus des fonctionnalités originales, cette version propose un système d'enregistrement de données avancé vers des fichiers Google Sheets ou JSON.
 
 <p align="center">
 <img src="./assets/mcbash.gif" width="80%" />
 </p>
 
-
 ## Quick start
 
 ```bash
-git clone https://github.com/dougy147/mcbash
+git clone https://github.com/Mattias16-beep/mcbash
 cd ./mcbash
 sudo make install
 ```
@@ -20,7 +19,7 @@ sudo make install
 ### Docker
 
 ```bash
-git clone https://github.com/dougy147/mcbash
+git clone https://github.com/Mattias16-beep/mcbash
 cd ./mcbash
 docker-compose up -d
 docker exec -it mcbash /bin/bash
@@ -30,54 +29,90 @@ docker exec -it mcbash /bin/bash
 
 For Arch users, there is an up-to-date `mcbash` package on the AUR.
 
+## Fonctionnalités avancées de cette fork
+
+### Stockage de données amélioré
+
+Cette version améliore le stockage des MAC adresses valides trouvées :
+
+| Option                 | Fonctionnalité                                             |
+| ---------------------- | ---------------------------------------------------------- |
+| **`--json-storage`**   | Enregistre les MAC trouvées dans un fichier JSON structuré |
+| **`--sheets-storage`** | Sauvegarde les données dans un Google Sheet                |
+| **`--sheets-creds`**   | Chemin vers le fichier de credentials Google Sheets        |
+| **`--db-path`**        | Chemin personnalisé pour le stockage des données           |
+
+### Configuration du stockage Google Sheets
+
+Pour utiliser le stockage Google Sheets :
+
+1. Créer un projet dans la Console Google Cloud
+2. Activer l'API Google Sheets
+3. Créer des identifiants de service
+4. Télécharger le fichier JSON des credentials
+5. Spécifier le chemin avec `--sheets-creds`
+
+Exemple : `mcbash -u my-server.com --sheets-storage --sheets-creds ~/google-creds.json`
+
+### Structure du fichier JSON
+
+Avec l'option `--json-storage`, les données sont stockées dans un format structuré incluant :
+
+- Adresse MAC
+- Date et heure de découverte
+- Statut (valide/expiré)
+- Informations supplémentaires (SN, DevID, etc.)
+- Métadonnées serveur
+
+Exemple : `mcbash -u my-server.com --json-storage --db-path ~/mac-database.json`
+
 ## Functionalities overview
 
-As servers may differ in the way they handle requests, one need to adapt. The key feature of `mcbash` is **flexibility**. It comes with handy options to manage your requests. 
+As servers may differ in the way they handle requests, one need to adapt. The key feature of `mcbash` is **flexibility**. It comes with handy options to manage your requests.
 
 ### Requests
 
-| Option                       | Functionality                                                |
-|------------------------------|--------------------------------------------------------------|
-| **`-u`**, `--url`            | Server's URL/IP                                              |
-| **`-w`**, `--wait`           | Wait **X** seconds between each requests                     |
-| **`-b`**, `--break`          | Make a break every **X** requests                            |
-| **`-d`**, `--pause-for`      | Break duration (in seconds)                                  |
-| **`-s`**, `--stop`           | Stop McBash after **X** tested MACs                          |
-| **`-t`**, `--timeout`        | Consider request a timeout after **X** seconds               |
-| **`-P`**, `--proxy`          | Set the proxy URL (any authentication method supported)      |
-| **`-pu`**, `--proxy-user`    | Set your proxy credentials `user:password`                   |
-| `--proxy-file`               | Read proxy IPs from a file. Rotation when request timeout    |
-| **`-EA`**, `--enhanced-auth` | Add SN and DevID1 to GET request (and save them if match)    |
+| Option                       | Functionality                                             |
+| ---------------------------- | --------------------------------------------------------- |
+| **`-u`**, `--url`            | Server's URL/IP                                           |
+| **`-w`**, `--wait`           | Wait **X** seconds between each requests                  |
+| **`-b`**, `--break`          | Make a break every **X** requests                         |
+| **`-d`**, `--pause-for`      | Break duration (in seconds)                               |
+| **`-s`**, `--stop`           | Stop McBash after **X** tested MACs                       |
+| **`-t`**, `--timeout`        | Consider request a timeout after **X** seconds            |
+| **`-P`**, `--proxy`          | Set the proxy URL (any authentication method supported)   |
+| **`-pu`**, `--proxy-user`    | Set your proxy credentials `user:password`                |
+| `--proxy-file`               | Read proxy IPs from a file. Rotation when request timeout |
+| **`-EA`**, `--enhanced-auth` | Add SN and DevID1 to GET request (and save them if match) |
 
 ### Scan mode
 
-| Option                    | Functionality                                                |
-|---------------------------|--------------------------------------------------------------|
-| `--mac-file`              | Choose a file to read MACs from (MACs should be line by line)|
-| `--seq`                   | Check MACs in sequential order (`--range` is forced)         |
-| `--range`                 | Set a range for checked MACs                                 |
-| **`-F`**, `--from`        | Set range lower boundary (lowest MAC value to check)         |
-|  **`-L`**, `--to`         | Set range higher boundary (highest MAC value to check)       |
-| `--prefix`                | Select MACs prefix when screening in random mode             |
+| Option             | Functionality                                                 |
+| ------------------ | ------------------------------------------------------------- |
+| `--mac-file`       | Choose a file to read MACs from (MACs should be line by line) |
+| `--seq`            | Check MACs in sequential order (`--range` is forced)          |
+| `--range`          | Set a range for checked MACs                                  |
+| **`-F`**, `--from` | Set range lower boundary (lowest MAC value to check)          |
+| **`-L`**, `--to`   | Set range higher boundary (highest MAC value to check)        |
+| `--prefix`         | Select MACs prefix when screening in random mode              |
 
 ### Others
 
-| Option                    | Functionality                                                |
-|---------------------------|--------------------------------------------------------------|
-| **`-k`**, `--keep`        | Store expired MACs (valid addresses but expired accounts)    |
-| **`-np`**, `--default`    | Don't ask for parameters. Use default configuration          |
-| `--show-only-mac`         | Only outputs found MACs                                      |
-| `--no-checkpoint`         | Don't store checkpoints                                      |
+| Option                 | Functionality                                             |
+| ---------------------- | --------------------------------------------------------- |
+| **`-k`**, `--keep`     | Store expired MACs (valid addresses but expired accounts) |
+| **`-np`**, `--default` | Don't ask for parameters. Use default configuration       |
+| `--show-only-mac`      | Only outputs found MACs                                   |
+| `--no-checkpoint`      | Don't store checkpoints                                   |
 
-`mcbash --help` displays most common options. 
+`mcbash --help` displays most common options.
 
-For *advanced* settings, read the manual : `man mcbash`.
-
+For _advanced_ settings, read the manual : `man mcbash`.
 
 ### Scan randomly, sequentially, or from file
 
-By default, MACs are *pseudo*-randomly generated and checked (random mode). 
-If you want to screen sequentially, use `--seq` (sequential mode). 
+By default, MACs are _pseudo_-randomly generated and checked (random mode).
+If you want to screen sequentially, use `--seq` (sequential mode).
 You can also read MACs from a file (line by line) with `--mac-file your_file.txt`.
 
 ### Scan inside a range
@@ -113,7 +148,6 @@ For `00:1A:79:xx:xx:xx`-like MAC addresses (most commons), there are $16^6$ poss
 
 macOS runs a dinosaur version of bash. But `mcbash` won't allow its users to be left behind. That's why its code is meant to stay retro-compatible. How kind from this little script 😎!
 
-
 ## Usage examples
 
 - **Example 0** : `mcbash`
@@ -124,16 +158,21 @@ Easiest way to use it! `mcbash` guides you and adapts to your requests.
 
 The program waits 1.5 seconds between each requests, makes a break every 10 requests for 3 seconds, stops after 1500 MACs checked, and considers a request timeouted after 2 seconds (timeouts trigger a pause to avoid flood).
 
-
 - **Example 2** : `mcbash -u my-fakedns.bla:8080 -F 00:1A:79:00:00:00 -L 00:1A:79:00:11:11`
 
 Scans sequentially from `00:1A:79:00:00:00` to `00:1A:79:00:11:11`.
-
 
 - **Example 3** : `mcbash -u my-fakedns.bla:8080 --proxy http://localhost:12345 --proxy-user user:pwd`
 
 Establishes communications through proxy `http://localhost:12345`, with `user:pwd` username and password.
 
+- **Example 4** : `mcbash -u my-server.com:8080 --sheets-storage --sheets-creds ~/google-creds.json`
+
+Vérifie les adresses MAC et enregistre automatiquement les résultats dans Google Sheets.
+
+- **Example 5** : `mcbash -u my-server.com:8080 --json-storage --db-path ~/mac-database.json`
+
+Stocke toutes les adresses MAC trouvées dans un fichier JSON structuré pour un accès et une analyse faciles.
 
 ## Instructions for the careless mind 🧠
 
@@ -146,7 +185,6 @@ That way, it's unnecessary to say I'm only responsible for sharing a recipe one 
 So, illegality is not contained in that program. It can only be in its user's behavior.
 Please use that script consciously, with and on your personal goods only.
 
-
 ## Special thanks to contributors !
 
 <a href="https://github.com/ian10951">
@@ -155,7 +193,9 @@ Please use that script consciously, with and on your personal goods only.
 <a href="https://github.com/jojo141185">
   <img src="https://avatars.githubusercontent.com/u/6240522?v=4" width='50px'>
 </a>
-
+<a href="https://github.com/Mattias16-beep">
+  <img src="https://avatars.githubusercontent.com/u/120423041?s=48&v=4" width='50px'>
+</a>
 
 ## Feel free ! 😎
 
@@ -164,4 +204,3 @@ If `mcbash` has been of any help to you, I'd be glad and thankful !
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/dougy147)
 
 BTC : `bc1q4cflj0e3hwcn5edut654je86upn37p37gut5yk`
-
