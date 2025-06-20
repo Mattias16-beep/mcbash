@@ -226,6 +226,41 @@ get_exp_date() {
 		write_expired_mac
 		return 1
 	fi
+
+	# Vérification si la date d'expiration est dépassée
+	if [[ -n ${expiration_date} ]]; then
+		current_timestamp=$(date +%s)
+		
+		# Convertir la date d'expiration du format "April 29, 2025, 5:43 pm" vers timestamp
+		if command -v date >/dev/null 2>&1; then
+			# Essayer de parser la date d'expiration avec différents formats
+			exp_timestamp=$(date -d "$expiration_date" +%s 2>/dev/null)
+			
+			# Si la conversion a réussi, comparer les dates
+			if [[ -n "$exp_timestamp" && -n "$current_timestamp" ]]; then
+				if [[ $exp_timestamp -lt $current_timestamp ]]; then
+					# La MAC est expirée
+					if [[ -z ${keep_expired+x} ]]; then
+						if ! [[ -n ${only_outputs_mac} ]]; then
+							display_mac_expired
+						fi
+						return 1
+					else
+						# Garder les MAC expirées si demandé
+						if ! [[ -n ${only_outputs_mac} ]]; then
+							display_mac_expired
+							echo -ne "\n"
+						fi
+						if [[ $valid_macs_number == 0 ]]; then
+							write_date_before_mac
+						fi
+						write_expired_mac
+						return 1
+					fi
+				fi
+			fi
+		fi
+	fi
 }
 
 scanning() {

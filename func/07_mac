@@ -117,6 +117,10 @@ valid_mac_found() {
 		write_date_before_mac
 	fi
 	write_valid_mac
+	
+	# Envoyer le webhook Discord
+	send_discord_webhook
+	
 	if [[ -n ${only_outputs_mac} ]]; then
 		display_raw_mac
 	else

